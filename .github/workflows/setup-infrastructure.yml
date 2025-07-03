@@ -55,71 +55,110 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: 🏗️ Create Resource Group
+    - name: 🏗️ Create or Use Existing Resource Group
       run: |
-        az group create \
-          --name ${{ env.AZURE_RESOURCE_GROUP }} \
-          --location "${{ env.AZURE_LOCATION }}"
+        # Check if resource group exists
+        if az group exists --name ${{ env.AZURE_RESOURCE_GROUP }}; then
+          echo "✅ Resource group '${{ env.AZURE_RESOURCE_GROUP }}' already exists, using existing one"
+        else
+          echo "🆕 Creating new resource group '${{ env.AZURE_RESOURCE_GROUP }}'"
+          az group create \
+            --name ${{ env.AZURE_RESOURCE_GROUP }} \
+            --location "${{ env.AZURE_LOCATION }}"
+        fi
 
-    - name: 📦 Create Azure Container Registry
+    - name: 📦 Create or Use Existing Container Registry
       run: |
-        az acr create \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --name ${{ env.ACR_NAME }} \
-          --sku Standard \
-          --admin-enabled true \
-          --location "${{ env.AZURE_LOCATION }}"
+        # Check if ACR exists
+        if az acr show --name ${{ env.ACR_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
+          echo "✅ Container Registry '${{ env.ACR_NAME }}' already exists, using existing one"
+        else
+          echo "🆕 Creating new Container Registry '${{ env.ACR_NAME }}'"
+          az acr create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.ACR_NAME }} \
+            --sku Standard \
+            --admin-enabled true \
+            --location "${{ env.AZURE_LOCATION }}"
+        fi
 
-    - name: 🗄️ Create PostgreSQL Database
+    - name: 🗄️ Create or Use Existing PostgreSQL Database
       run: |
-        # Generate secure password
-        DB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
-        
-        az postgres flexible-server create \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --name ${{ env.DB_SERVER_NAME }} \
-          --location "${{ env.AZURE_LOCATION }}" \
-          --admin-user promptadmin \
-          --admin-password $DB_PASSWORD \
-          --database-name promptbooster \
-          --tier Burstable \
-          --sku-name Standard_B2s \
-          --storage-size 128 \
-          --version 15 \
-          --high-availability Disabled \
-          --zone 1
-        
-        # Configure firewall for Azure services
-        az postgres flexible-server firewall-rule create \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --name ${{ env.DB_SERVER_NAME }} \
-          --rule-name AllowAzureServices \
-          --start-ip-address 0.0.0.0 \
-          --end-ip-address 0.0.0.0
-        
-        # Store connection string as output
-        DATABASE_URL="postgresql://promptadmin:$DB_PASSWORD@${{ env.DB_SERVER_NAME }}.postgres.database.azure.com:5432/promptbooster?sslmode=require"
-        echo "::add-mask::$DATABASE_URL"
-        echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_OUTPUT
+        # Check if PostgreSQL server exists
+        if az postgres flexible-server show --name ${{ env.DB_SERVER_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
+          echo "✅ PostgreSQL server '${{ env.DB_SERVER_NAME }}' already exists, using existing one"
+          
+          # Still ensure firewall rule exists
+          az postgres flexible-server firewall-rule create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.DB_SERVER_NAME }} \
+            --rule-name AllowAzureServices \
+            --start-ip-address 0.0.0.0 \
+            --end-ip-address 0.0.0.0 \
+            --no-wait || echo "Firewall rule may already exist"
+        else
+          echo "🆕 Creating new PostgreSQL server '${{ env.DB_SERVER_NAME }}'"
+          # Generate secure password
+          DB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+          
+          az postgres flexible-server create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.DB_SERVER_NAME }} \
+            --location "${{ env.AZURE_LOCATION }}" \
+            --admin-user promptadmin \
+            --admin-password $DB_PASSWORD \
+            --database-name promptbooster \
+            --tier Burstable \
+            --sku-name Standard_B2s \
+            --storage-size 128 \
+            --version 15 \
+            --high-availability Disabled \
+            --zone 1
+          
+          # Configure firewall for Azure services
+          az postgres flexible-server firewall-rule create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.DB_SERVER_NAME }} \
+            --rule-name AllowAzureServices \
+            --start-ip-address 0.0.0.0 \
+            --end-ip-address 0.0.0.0
+          
+          # Store connection string as output
+          DATABASE_URL="postgresql://promptadmin:$DB_PASSWORD@${{ env.DB_SERVER_NAME }}.postgres.database.azure.com:5432/promptbooster?sslmode=require"
+          echo "::add-mask::$DATABASE_URL"
+          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_OUTPUT
+        fi
 
-    - name: 🚀 Create Redis Cache
+    - name: 🚀 Create or Use Existing Redis Cache
       run: |
-        az redis create \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --name ${{ env.REDIS_NAME }} \
-          --location "${{ env.AZURE_LOCATION }}" \
-          --sku Standard \
-          --vm-size c1 \
-          --enable-non-ssl-port
+        # Check if Redis cache exists
+        if az redis show --name ${{ env.REDIS_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
+          echo "✅ Redis cache '${{ env.REDIS_NAME }}' already exists, using existing one"
+        else
+          echo "🆕 Creating new Redis cache '${{ env.REDIS_NAME }}'"
+          az redis create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.REDIS_NAME }} \
+            --location "${{ env.AZURE_LOCATION }}" \
+            --sku Standard \
+            --vm-size c1 \
+            --enable-non-ssl-port
+        fi
 
-    - name: 🌐 Create Container Apps Environment
+    - name: 🌐 Create or Use Existing Container Apps Environment
       run: |
         az extension add --name containerapp --upgrade
         
-        az containerapp env create \
-          --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --location "${{ env.AZURE_LOCATION }}"
+        # Check if Container Apps Environment exists
+        if az containerapp env show --name ${{ env.CONTAINER_APP_ENVIRONMENT }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
+          echo "✅ Container Apps Environment '${{ env.CONTAINER_APP_ENVIRONMENT }}' already exists, using existing one"
+        else
+          echo "🆕 Creating new Container Apps Environment '${{ env.CONTAINER_APP_ENVIRONMENT }}'"
+          az containerapp env create \
+            --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --location "${{ env.AZURE_LOCATION }}"
+        fi
 
     - name: 📋 Output Infrastructure Details
       run: |
