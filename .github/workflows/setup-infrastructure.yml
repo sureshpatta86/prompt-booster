@@ -65,7 +65,7 @@ jobs:
         az provider register --namespace Microsoft.ContainerRegistry --wait
         az provider register --namespace Microsoft.DBforPostgreSQL --wait
         az provider register --namespace Microsoft.Cache --wait
-        az provider register --namespace Microsoft.App --wait
+        az provider.register --namespace Microsoft.App --wait
         az provider register --namespace Microsoft.OperationalInsights --wait
         
         echo "✅ All resource providers registered successfully"
@@ -174,6 +174,30 @@ jobs:
             --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --location "${{ env.AZURE_LOCATION }}"
+        fi
+
+    - name: 🚀 Create or Use Existing Container App
+      run: |
+        # Check if Container App exists
+        if az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
+          echo "✅ Container App '${{ env.CONTAINER_APP_NAME }}' already exists, using existing one"
+        else
+          echo "🆕 Creating new Container App '${{ env.CONTAINER_APP_NAME }}'"
+          
+          # Create a placeholder container app (will be updated by deploy workflow)
+          az containerapp create \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
+            --image mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
+            --target-port 80 \
+            --ingress external \
+            --min-replicas 1 \
+            --max-replicas 3 \
+            --cpu 0.5 \
+            --memory 1.0Gi
+          
+          echo "✅ Container App created successfully (placeholder image)"
         fi
 
     - name: 📋 Output Infrastructure Details

@@ -9,9 +9,9 @@ on:
 
 env:
   AZURE_RESOURCE_GROUP: rg-prompt-booster
-  AZURE_CONTAINER_REGISTRY: acrpromptbooster
-  CONTAINER_APP_NAME: prompt-booster
-  CONTAINER_APP_ENVIRONMENT: env-prompt-booster
+  AZURE_CONTAINER_REGISTRY: acrpromptboosterproduction
+  CONTAINER_APP_NAME: prompt-booster-production
+  CONTAINER_APP_ENVIRONMENT: env-prompt-booster-production
   IMAGE_NAME: prompt-booster
 
 jobs:
@@ -81,14 +81,21 @@ jobs:
         # Get the latest image tag
         IMAGE_TAG=${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
         
-        # Update the container app
+        # Update the container app with proper configuration
         az containerapp update \
           --name ${{ env.CONTAINER_APP_NAME }} \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --image $IMAGE_TAG \
+          --target-port 3000 \
+          --ingress external \
+          --min-replicas 1 \
+          --max-replicas 5 \
+          --cpu 0.75 \
+          --memory 1.5Gi \
           --set-env-vars \
             NODE_ENV=production \
             NEXT_TELEMETRY_DISABLED=1 \
+            PORT=3000 \
             DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             REDIS_URL="${{ secrets.REDIS_URL }}" \
             NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
@@ -134,14 +141,22 @@ jobs:
       continue-on-error: true
       run: |
         # Clean up migration containers (keep only latest 3)
-        az container list \
+        MIGRATION_CONTAINERS=$(az container list \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --query "[?starts_with(name, 'migration-job-')].name" \
-          --output tsv | \
-        sort -r | \
-        tail -n +4 | \
-        xargs -I {} az container delete \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --name {} \
-          --yes \
-          --no-wait || true
+          --output tsv | sort -r)
+        
+        if [ -n "$MIGRATION_CONTAINERS" ]; then
+          echo "$MIGRATION_CONTAINERS" | tail -n +4 | while read container_name; do
+            if [ -n "$container_name" ]; then
+              echo "🧹 Cleaning up old migration container: $container_name"
+              az container delete \
+                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+                --name "$container_name" \
+                --yes \
+                --no-wait || echo "Failed to delete $container_name (may already be deleted)"
+            fi
+          done
+        else
+          echo "🆕 No migration containers to clean up"
+        fi
