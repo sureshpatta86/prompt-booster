@@ -18,12 +18,19 @@ on:
       location:
         description: 'Azure Region'
         required: true
-        default: 'East US'
+        default: 'Central India'
         type: choice
         options:
-        - East US
+        - Central India
+        - East US 2
         - West US 2
+        - West US 3
+        - Central US
+        - South Central US
         - West Europe
+        - North Europe
+        - UK South
+        - Australia East
         - Southeast Asia
 
 env:
