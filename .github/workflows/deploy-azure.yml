@@ -81,18 +81,16 @@ jobs:
         # Get the latest image tag
         IMAGE_TAG=${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
         
-        # Update the container app with proper configuration
+        # Update the container app
         az containerapp update \
           --name ${{ env.CONTAINER_APP_NAME }} \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --image $IMAGE_TAG \
-          --target-port 3000 \
-          --ingress external \
           --min-replicas 1 \
           --max-replicas 5 \
           --cpu 0.75 \
           --memory 1.5Gi \
-          --set-env-vars \
+          --env-vars \
             NODE_ENV=production \
             NEXT_TELEMETRY_DISABLED=1 \
             PORT=3000 \
@@ -135,6 +133,42 @@ jobs:
         echo "🎉 Application deployed successfully!"
         echo "🌐 URL: https://$APP_URL"
         echo "::notice title=Deployment Success::Application is live at https://$APP_URL"
+
+    - name: 🔍 Validate deployment health
+      if: github.ref == 'refs/heads/main'
+      run: |
+        # Get the application URL
+        APP_URL=$(az containerapp show \
+          --name ${{ env.CONTAINER_APP_NAME }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --query properties.configuration.ingress.fqdn \
+          --output tsv)
+        
+        if [ -z "$APP_URL" ]; then
+          echo "❌ Failed to get application URL"
+          exit 1
+        fi
+        
+        # Wait for the app to be ready
+        echo "⏳ Waiting for application to be ready..."
+        for i in {1..30}; do
+          if curl -f -s "https://$APP_URL/api/health" > /dev/null; then
+            echo "✅ Application health check passed"
+            break
+          fi
+          echo "⏳ Attempt $i/30: Waiting for application to respond..."
+          sleep 10
+        done
+        
+        # Final health check
+        HEALTH_RESPONSE=$(curl -f -s "https://$APP_URL/api/health" || echo "failed")
+        if [ "$HEALTH_RESPONSE" = "failed" ]; then
+          echo "❌ Health check failed after 5 minutes"
+          exit 1
+        fi
+        
+        echo "✅ Deployment validation successful"
+        echo "🩺 Health check response: $HEALTH_RESPONSE"
 
     - name: 🧹 Cleanup migration container
       if: github.ref == 'refs/heads/main'
