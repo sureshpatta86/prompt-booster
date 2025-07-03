@@ -1,6 +1,6 @@
 # Prompt Booster
 
-AI-powered prompt optimization platform built with Next.js 14, Drizzle ORM, and TypeScript.
+AI-powered prompt optimization platform built with Next.js 15, Drizzle ORM, and TypeScript.
 
 ## Features
 
@@ -14,7 +14,7 @@ AI-powered prompt optimization platform built with Next.js 14, Drizzle ORM, and 
 ## Tech Stack
 
 ### Frontend
-- **Next.js 14** - React framework with App Router
+- **Next.js 15** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first styling
 - **Radix UI** - Accessible component primitives
@@ -37,7 +37,7 @@ AI-powered prompt optimization platform built with Next.js 14, Drizzle ORM, and 
 
 ### Prerequisites
 
-- Node.js 18.0.0 or higher
+- Node.js 20.0.0 or higher
 - PostgreSQL database
 - Redis (optional, for caching)
 
