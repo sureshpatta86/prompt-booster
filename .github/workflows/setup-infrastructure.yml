@@ -1,0 +1,130 @@
+name: Setup Azure Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+      resource_group:
+        description: 'Azure Resource Group Name'
+        required: true
+        default: 'rg-prompt-booster'
+      location:
+        description: 'Azure Region'
+        required: true
+        default: 'East US'
+        type: choice
+        options:
+        - East US
+        - West US 2
+        - West Europe
+        - Southeast Asia
+
+env:
+  AZURE_RESOURCE_GROUP: ${{ github.event.inputs.resource_group }}
+  AZURE_LOCATION: ${{ github.event.inputs.location }}
+  ACR_NAME: acrpromptbooster${{ github.event.inputs.environment }}
+  CONTAINER_APP_NAME: prompt-booster-${{ github.event.inputs.environment }}
+  CONTAINER_APP_ENVIRONMENT: env-prompt-booster-${{ github.event.inputs.environment }}
+  DB_SERVER_NAME: psql-prompt-booster-${{ github.event.inputs.environment }}
+  REDIS_NAME: redis-prompt-booster-${{ github.event.inputs.environment }}
+
+jobs:
+  setup-infrastructure:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 🛎️ Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🔐 Login to Azure
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: 🏗️ Create Resource Group
+      run: |
+        az group create \
+          --name ${{ env.AZURE_RESOURCE_GROUP }} \
+          --location "${{ env.AZURE_LOCATION }}"
+
+    - name: 📦 Create Azure Container Registry
+      run: |
+        az acr create \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name ${{ env.ACR_NAME }} \
+          --sku Standard \
+          --admin-enabled true \
+          --location "${{ env.AZURE_LOCATION }}"
+
+    - name: 🗄️ Create PostgreSQL Database
+      run: |
+        # Generate secure password
+        DB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+        
+        az postgres flexible-server create \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name ${{ env.DB_SERVER_NAME }} \
+          --location "${{ env.AZURE_LOCATION }}" \
+          --admin-user promptadmin \
+          --admin-password $DB_PASSWORD \
+          --database-name promptbooster \
+          --sku-name Standard_B2s \
+          --storage-size 128 \
+          --version 15 \
+          --high-availability Disabled \
+          --zone 1
+        
+        # Configure firewall for Azure services
+        az postgres flexible-server firewall-rule create \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name ${{ env.DB_SERVER_NAME }} \
+          --rule-name AllowAzureServices \
+          --start-ip-address 0.0.0.0 \
+          --end-ip-address 0.0.0.0
+        
+        # Store connection string as output
+        DATABASE_URL="postgresql://promptadmin:$DB_PASSWORD@${{ env.DB_SERVER_NAME }}.postgres.database.azure.com:5432/promptbooster?sslmode=require"
+        echo "::add-mask::$DATABASE_URL"
+        echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_OUTPUT
+
+    - name: 🚀 Create Redis Cache
+      run: |
+        az redis create \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name ${{ env.REDIS_NAME }} \
+          --location "${{ env.AZURE_LOCATION }}" \
+          --sku Standard \
+          --vm-size c1 \
+          --enable-non-ssl-port
+
+    - name: 🌐 Create Container Apps Environment
+      run: |
+        az extension add --name containerapp --upgrade
+        
+        az containerapp env create \
+          --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --location "${{ env.AZURE_LOCATION }}"
+
+    - name: 📋 Output Infrastructure Details
+      run: |
+        echo "🎉 Infrastructure setup completed!"
+        echo ""
+        echo "📦 Container Registry: ${{ env.ACR_NAME }}.azurecr.io"
+        echo "🗄️ Database Server: ${{ env.DB_SERVER_NAME }}.postgres.database.azure.com"
+        echo "🚀 Redis Cache: ${{ env.REDIS_NAME }}.redis.cache.windows.net"
+        echo "🌐 Container Environment: ${{ env.CONTAINER_APP_ENVIRONMENT }}"
+        echo ""
+        echo "⚠️ Please update your GitHub repository secrets with:"
+        echo "- DATABASE_URL (from Azure Portal)"
+        echo "- REDIS_URL (from Azure Portal)"
+        echo "- NEXTAUTH_SECRET (generate with: openssl rand -hex 32)"
+        echo "- NEXTAUTH_URL (will be set after container app deployment)"
+        echo "- OPENAI_API_KEY (your OpenAI API key)"
