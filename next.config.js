@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  experimental: {
-    serverComponentsExternalPackages: ['drizzle-orm', 'bcryptjs'],
-  },
+  serverExternalPackages: ['drizzle-orm', 'bcryptjs'],
   images: {
     remotePatterns: [
       {

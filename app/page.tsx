@@ -91,8 +91,8 @@ export default function HomePage() {
             <h3 className="text-lg font-semibold mb-3">Sample Prompt:</h3>
             <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[120px] flex items-center justify-center">
               <p className="text-gray-500 italic">
-                "Write a comprehensive guide that covers the essential aspects of machine learning, 
-                including algorithms, data preprocessing, and model evaluation techniques."
+                &ldquo;Write a comprehensive guide that covers the essential aspects of machine learning, 
+                including algorithms, data preprocessing, and model evaluation techniques.&rdquo;
               </p>
             </div>
           </div>
