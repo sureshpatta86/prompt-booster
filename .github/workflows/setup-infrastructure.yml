@@ -82,6 +82,7 @@ jobs:
           --admin-user promptadmin \
           --admin-password $DB_PASSWORD \
           --database-name promptbooster \
+          --tier Burstable \
           --sku-name Standard_B2s \
           --storage-size 128 \
           --version 15 \
