@@ -41,6 +41,8 @@ env:
   CONTAINER_APP_ENVIRONMENT: env-prompt-booster-${{ github.event.inputs.environment }}
   DB_SERVER_NAME: psql-prompt-booster-${{ github.event.inputs.environment }}
   REDIS_NAME: redis-prompt-booster-${{ github.event.inputs.environment }}
+  AZURE_CORE_OUTPUT: json
+  AZURE_CORE_ONLY_SHOW_ERRORS: true
 
 jobs:
   setup-infrastructure:
@@ -113,7 +115,8 @@ jobs:
             --storage-size 128 \
             --version 15 \
             --high-availability Disabled \
-            --zone 1
+            --zone 1 \
+            --yes
           
           # Configure firewall for Azure services
           az postgres flexible-server firewall-rule create \
@@ -142,7 +145,8 @@ jobs:
             --location "${{ env.AZURE_LOCATION }}" \
             --sku Standard \
             --vm-size c1 \
-            --enable-non-ssl-port
+            --enable-non-ssl-port \
+            --yes
         fi
 
     - name: 🌐 Create or Use Existing Container Apps Environment
