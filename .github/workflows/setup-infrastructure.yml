@@ -145,8 +145,7 @@ jobs:
             --location "${{ env.AZURE_LOCATION }}" \
             --sku Standard \
             --vm-size c1 \
-            --enable-non-ssl-port \
-            --yes
+            --enable-non-ssl-port
         fi
 
     - name: 🌐 Create or Use Existing Container Apps Environment
