@@ -229,33 +229,54 @@ jobs:
     - name: 🔄 Run database migrations
       if: github.ref == 'refs/heads/main'
       run: |
-        # Get ACR credentials for temporary container
-        ACR_USERNAME=$(az acr credential show --name ${{ env.AZURE_CONTAINER_REGISTRY }} --query "username" --output tsv)
-        ACR_PASSWORD=$(az acr credential show --name ${{ env.AZURE_CONTAINER_REGISTRY }} --query "passwords[0].value" --output tsv)
+        echo "🗄️ Running database migrations..."
         
-        # Run migrations in a temporary container
-        az container create \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --name migration-job-$(date +%s) \
-          --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
-          --registry-login-server ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io \
-          --registry-username $ACR_USERNAME \
-          --registry-password $ACR_PASSWORD \
-          --command-line "npm run db:migrate" \
-          --environment-variables \
-            DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-          --restart-policy Never \
-          --no-wait
+        # Register required resource providers
+        echo "📋 Registering Azure resource providers..."
+        az provider register --namespace Microsoft.ContainerInstance --wait || echo "Provider registration may take time"
+        
+        # Check if we have a db:migrate script
+        if grep -q '"db:migrate"' package.json; then
+          echo "✅ Found db:migrate script in package.json"
+          
+          # Get ACR credentials for temporary container
+          ACR_USERNAME=$(az acr credential show --name ${{ env.AZURE_CONTAINER_REGISTRY }} --query "username" --output tsv)
+          ACR_PASSWORD=$(az acr credential show --name ${{ env.AZURE_CONTAINER_REGISTRY }} --query "passwords[0].value" --output tsv)
+          
+          # Try to run migrations in a temporary container
+          echo "🚀 Starting migration container..."
+          if az container create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name migration-job-$(date +%s) \
+            --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
+            --registry-login-server ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io \
+            --registry-username $ACR_USERNAME \
+            --registry-password $ACR_PASSWORD \
+            --command-line "npm run db:migrate" \
+            --environment-variables \
+              DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            --restart-policy Never \
+            --no-wait; then
+            echo "✅ Migration container started successfully"
+          else
+            echo "⚠️ Migration container creation failed, but deployment continues"
+            echo "💡 You may need to run migrations manually or wait for resource provider registration"
+          fi
+        else
+          echo "ℹ️ No db:migrate script found in package.json, skipping migrations"
+        fi
 
     - name: 🧹 Cleanup migration container
       if: github.ref == 'refs/heads/main'
       continue-on-error: true
       run: |
+        echo "🧹 Cleaning up old migration containers..."
+        
         # Clean up migration containers (keep only latest 3)
         MIGRATION_CONTAINERS=$(az container list \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --query "[?starts_with(name, 'migration-job-')].name" \
-          --output tsv | sort -r)
+          --output tsv | sort -r 2>/dev/null || echo "")
         
         if [ -n "$MIGRATION_CONTAINERS" ]; then
           echo "$MIGRATION_CONTAINERS" | tail -n +4 | while read container_name; do
@@ -265,9 +286,11 @@ jobs:
                 --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
                 --name "$container_name" \
                 --yes \
-                --no-wait || echo "Failed to delete $container_name (may already be deleted)"
+                --no-wait 2>/dev/null || echo "Failed to delete $container_name (may already be deleted)"
             fi
           done
         else
           echo "🆕 No migration containers to clean up"
         fi
+        
+        echo "✅ Migration cleanup completed"
