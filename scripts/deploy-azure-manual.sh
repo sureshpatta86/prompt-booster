@@ -29,17 +29,38 @@ fi
 IMAGE_TAG="${ACR_NAME}.azurecr.io/${IMAGE_NAME}:latest"
 echo -e "${YELLOW}📦 Using image: $IMAGE_TAG${NC}"
 
+# Get ACR credentials for container app authentication
+echo -e "${YELLOW}🔑 Getting ACR credentials...${NC}"
+
+# Ensure admin user is enabled
+echo -e "${YELLOW}🔐 Ensuring ACR admin user is enabled...${NC}"
+az acr update --name $ACR_NAME --admin-enabled true
+
+ACR_SERVER="${ACR_NAME}.azurecr.io"
+ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query "username" --output tsv)
+ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" --output tsv)
+
+if [ -z "$ACR_USERNAME" ] || [ -z "$ACR_PASSWORD" ]; then
+  echo -e "${RED}❌ Failed to retrieve ACR credentials${NC}"
+  exit 1
+fi
+
+echo -e "${GREEN}✅ ACR credentials retrieved successfully${NC}"
+
 # Check if container app exists and handle accordingly
 echo -e "${YELLOW}🔄 Checking if container app exists...${NC}"
 
 if az containerapp show --name $CONTAINER_APP_NAME --resource-group $RESOURCE_GROUP > /dev/null 2>&1; then
   echo -e "${GREEN}📦 Container app exists, updating...${NC}"
   
-  # Update existing container app with new image
+  # Update existing container app with new image and registry credentials
   az containerapp update \
     --name $CONTAINER_APP_NAME \
     --resource-group $RESOURCE_GROUP \
-    --image $IMAGE_TAG
+    --image $IMAGE_TAG \
+    --registry-server $ACR_SERVER \
+    --registry-username $ACR_USERNAME \
+    --registry-password $ACR_PASSWORD
   
   echo -e "${YELLOW}🔧 Setting environment variables...${NC}"
   # Set environment variables in a separate command
@@ -74,13 +95,16 @@ else
       --internal-only false
   fi
   
-  # Create new container app
+  # Create new container app with registry credentials
   echo -e "${YELLOW}🆕 Creating container app...${NC}"
   if az containerapp create \
       --name $CONTAINER_APP_NAME \
       --resource-group $RESOURCE_GROUP \
       --environment $CONTAINER_APP_ENVIRONMENT \
       --image $IMAGE_TAG \
+      --registry-server $ACR_SERVER \
+      --registry-username $ACR_USERNAME \
+      --registry-password $ACR_PASSWORD \
       --target-port 3000 \
       --ingress external \
       --min-replicas 1 \
