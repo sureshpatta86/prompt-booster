@@ -81,29 +81,69 @@ jobs:
         IMAGE_TAG=${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
         echo "🚀 Deploying image: $IMAGE_TAG"
         
-        # Update container app with new image
-        az containerapp update \
-          --name ${{ env.CONTAINER_APP_NAME }} \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --image $IMAGE_TAG
+        # Check if container app exists
+        if az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} > /dev/null 2>&1; then
+          echo "📦 Container app exists, updating..."
+          
+          # Update container app with new image
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image $IMAGE_TAG
+          
+          echo "🔧 Setting environment variables..."
+          # Set environment variables in a separate command
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --set-env-vars \
+              NODE_ENV=production \
+              NEXT_TELEMETRY_DISABLED=1 \
+              PORT=3000 \
+              DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              REDIS_URL="${{ secrets.REDIS_URL }}" \
+              NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
+              NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
+              OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+          
+        else
+          echo "�️ Container app doesn't exist, creating..."
+          
+          # First, ensure the container app environment exists
+          if ! az containerapp env show --name ${{ env.CONTAINER_APP_ENVIRONMENT }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} > /dev/null 2>&1; then
+            echo "🌍 Creating container app environment..."
+            az containerapp env create \
+              --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --location "Central India"
+          fi
+          
+          # Create the container app
+          az containerapp create \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
+            --image $IMAGE_TAG \
+            --min-replicas 1 \
+            --max-replicas 5 \
+            --cpu 0.75 \
+            --memory 1.5Gi \
+            --env-vars \
+              NODE_ENV=production \
+              NEXT_TELEMETRY_DISABLED=1 \
+              PORT=3000 \
+              DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              REDIS_URL="${{ secrets.REDIS_URL }}" \
+              NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
+              NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
+              OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
+            --ingress external \
+            --target-port 3000 \
+            --transport http
+        fi
         
-        echo "🔧 Setting environment variables..."
-        # Set environment variables in a separate command
-        az containerapp update \
-          --name ${{ env.CONTAINER_APP_NAME }} \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --set-env-vars \
-            NODE_ENV=production \
-            NEXT_TELEMETRY_DISABLED=1 \
-            PORT=3000 \
-            DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-            REDIS_URL="${{ secrets.REDIS_URL }}" \
-            NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
-            NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
-            OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
-        
-        echo "🌐 Configuring ingress..."
-        # Configure ingress separately (will succeed even if already configured)
+        echo "🌐 Ensuring ingress is configured..."
+        # Configure ingress (will succeed even if already configured)
         az containerapp ingress enable \
           --name ${{ env.CONTAINER_APP_NAME }} \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
