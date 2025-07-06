@@ -55,4 +55,4 @@ Dockerfile
 docker-compose*.yml
 
 # Ignore development scripts
-setup-github.sh
+scripts/setup/setup-github.sh

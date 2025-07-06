@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { Sparkles, Zap, Target, Shield } from 'lucide-react';
 
 export default function HomePage() {

@@ -1,6 +1,6 @@
-import './globals.css';
+import '../styles/globals.css';
 import type { Metadata } from 'next';
-import { Providers } from '@/components/providers';
+import { Providers } from '@/components/layout/providers';
 
 export const metadata: Metadata = {
   title: 'Prompt Booster - AI Prompt Optimization Platform',

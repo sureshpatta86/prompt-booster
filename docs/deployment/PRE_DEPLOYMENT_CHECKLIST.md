@@ -31,12 +31,12 @@
 
 ### Get Connection Strings
 ```bash
-./get-connection-strings.sh
+./scripts/setup/get-connection-strings.sh
 ```
 
 ### Setup GitHub Secrets
 ```bash
-./setup-secrets.sh
+./scripts/setup/setup-secrets.sh
 ```
 
 ### Test Locally

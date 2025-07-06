@@ -50,7 +50,7 @@ Your repository will contain:
 ```
 prompt-booster/
 ├── 📄 README.md              # Project documentation
-├── 📄 DEPLOYMENT.md          # Azure deployment guide
+├── 📄 docs/deployment/DEPLOYMENT.md          # Azure deployment guide
 ├── 📦 package.json           # Dependencies and scripts
 ├── 🏗️ app/                   # Next.js app directory
 ├── 🎨 components/            # React components

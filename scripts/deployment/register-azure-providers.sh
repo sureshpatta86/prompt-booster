@@ -122,6 +122,6 @@ for provider in "${PROVIDERS[@]}"; do
 done
 
 echo -e "\n${BLUE}🔗 Next Steps:${NC}"
-echo -e "1. Run your deployment: ./scripts/deploy-azure-fresh.sh"
+echo -e "1. Run your deployment: ./scripts/deployment/deploy-azure-fresh.sh"
 echo -e "2. Or push to main branch to trigger GitHub Actions"
 echo -e "3. Monitor the deployment progress"

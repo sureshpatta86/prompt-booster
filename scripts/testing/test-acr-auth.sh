@@ -83,4 +83,4 @@ echo -e "   • Ready for Container Apps deployment"
 
 echo -e "\n${YELLOW}💡 Next steps:${NC}"
 echo -e "   • Push your code to trigger the GitHub Actions workflow"
-echo -e "   • Or run: ./scripts/deploy-azure-manual.sh"
+echo -e "   • Or run: ./scripts/deployment/deploy-azure-manual.sh"

@@ -119,4 +119,4 @@ echo "4. ✅ Run 'Build and Deploy to Azure Container Apps' workflow"
 echo "5. ✅ Update NEXTAUTH_URL with deployed app URL"
 echo ""
 
-echo "🎉 Setup complete! Check SECRETS_SETUP_GUIDE.md for detailed instructions."
+echo "🎉 Setup complete! Check docs/setup/SECRETS_SETUP_GUIDE.md for detailed instructions."

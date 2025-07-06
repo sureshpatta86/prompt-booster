@@ -57,6 +57,8 @@ AI-powered prompt optimization platform built with Next.js 15, Drizzle ORM, and 
 3. **Set up environment variables**
    ```bash
    cp .env.example .env.local
+   # Or use the automated setup script
+   ./scripts/setup/setup-secrets.sh
    ```
    
    Update the following variables in `.env.local`:
@@ -132,6 +134,19 @@ The application uses PostgreSQL with the following main entities:
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## Documentation
+
+For detailed documentation, see the [docs](./docs/) directory:
+
+- 📁 **[Setup & Configuration](./docs/setup/)** - Environment setup and configuration guides
+- 📁 **[Deployment](./docs/deployment/)** - Production deployment guides and troubleshooting
+- 📁 **[Development](./docs/development/)** - Development guides and project architecture
+
+Quick links:
+- [Documentation Index](./docs/README.md) - Complete documentation overview
+- [Deployment Guide](./docs/deployment/DEPLOYMENT_GUIDE.md) - Deploy to production
+- [Setup Guide](./docs/setup/GITHUB_SETUP.md) - Get started with development
 
 ## License
 

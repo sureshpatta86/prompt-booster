@@ -25,7 +25,7 @@ az ad sp create-for-rbac \
   --json-auth
 
 # 3. Run the setup helper script
-./setup-secrets.sh
+./scripts/setup/setup-secrets.sh
 ```
 
 ## 📱 GitHub Setup Steps
@@ -73,10 +73,10 @@ az redis show \
 
 Run the interactive setup script:
 ```bash
-./setup-secrets.sh
+./scripts/setup/setup-secrets.sh
 ```
 
 Or check the detailed guide:
 ```bash
-cat SECRETS_SETUP_GUIDE.md
+cat docs/setup/SECRETS_SETUP_GUIDE.md
 ```

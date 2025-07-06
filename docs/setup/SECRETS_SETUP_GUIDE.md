@@ -247,7 +247,7 @@ Before deploying, verify all secrets are set:
 
 ## 🎯 Quick Setup Script
 
-Save this as `setup-secrets.sh`:
+Save this as `scripts/setup/setup-secrets.sh`:
 
 ```bash
 #!/bin/bash
@@ -273,6 +273,6 @@ echo ""
 echo "4. Don't forget to add your OPENAI_API_KEY!"
 ```
 
-Run with: `chmod +x setup-secrets.sh && ./setup-secrets.sh`
+Run with: `chmod +x scripts/setup/setup-secrets.sh && ./scripts/setup/setup-secrets.sh`
 
 Your secrets are now ready for deployment! 🚀
