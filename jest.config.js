@@ -28,6 +28,7 @@ const config = {
   
   // Test patterns
   testMatch: [
+    '<rootDir>/tests/**/*.(test|spec).(ts|tsx|js|jsx)',
     '**/__tests__/**/*.(ts|tsx|js|jsx)',
     '**/*.(test|spec).(ts|tsx|js|jsx)'
   ],
