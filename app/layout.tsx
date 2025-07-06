@@ -1,8 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-
-const inter = Inter({ subsets: ['latin'] });
+import { Providers } from '@/components/providers';
 
 export const metadata: Metadata = {
   title: 'Prompt Booster - AI Prompt Optimization Platform',
@@ -16,8 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {children}
+      <body className="font-sans">
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
