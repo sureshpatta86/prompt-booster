@@ -48,11 +48,11 @@ postgresql://promptadmin:YOUR_PASSWORD@psql-prompt-booster-production.postgres.d
 ```
 *Replace with your actual database credentials after infrastructure setup*
 
-### 🚀 3. REDIS_URL  
+### 🤖 6. OPENAI_API_KEY
 ```
-rediss://redis-prompt-booster-production.redis.cache.windows.net:6380,password=YOUR_REDIS_KEY,ssl=True
+YOUR_OPENAI_API_KEY
 ```
-*Replace with your actual Redis credentials after infrastructure setup*
+*Your OpenAI API key for prompt analysis features*
 
 ### 🔐 4. NEXTAUTH_SECRET
 ```bash
