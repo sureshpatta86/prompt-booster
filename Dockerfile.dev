@@ -1,6 +1,8 @@
 # Development Dockerfile with hot reload
 FROM node:20-alpine
 
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 WORKDIR /app
 
 # Install dependencies
@@ -8,10 +10,12 @@ COPY package*.json ./
 RUN npm ci
 
 # Copy source code
-COPY . .
+COPY --chown=appuser:appgroup . .
 
 # Expose port
 EXPOSE 3000
+
+USER appuser
 
 # Start development server with hot reload
 CMD ["npm", "run", "dev"]

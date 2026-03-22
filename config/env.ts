@@ -33,10 +33,29 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+function getRequiredSecret(name: 'NEXTAUTH_SECRET' | 'OPENAI_API_KEY'): string {
+  const value = process.env[name];
+
+  if (!value || value.trim().length === 0) {
+    throw new Error(`Missing required secret environment variable: ${name}`);
+  }
+
+  const insecurePlaceholders = new Set(['changeme', 'default', 'secret', 'password', 'token']);
+  if (insecurePlaceholders.has(value.trim().toLowerCase())) {
+    throw new Error(`Insecure placeholder value provided for environment variable: ${name}`);
+  }
+
+  return value;
+}
+
 // Validate environment variables at startup
 function validateEnv(): Env {
   try {
-    return envSchema.parse(process.env);
+    return envSchema.parse({
+      ...process.env,
+      NEXTAUTH_SECRET: getRequiredSecret('NEXTAUTH_SECRET'),
+      OPENAI_API_KEY: getRequiredSecret('OPENAI_API_KEY'),
+    });
   } catch (error) {
     console.error('❌ Invalid environment variables:', error);
     process.exit(1);

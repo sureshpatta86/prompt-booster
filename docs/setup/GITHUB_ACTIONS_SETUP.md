@@ -51,12 +51,12 @@ Add these **Repository Secrets**:
    postgresql://username:password@server.postgres.database.azure.com:5432/promptbooster?sslmode=require
    ```
 
-3. **REDIS_URL**
+6. **OPENAI_API_KEY**
    ```
-   rediss://your-redis.redis.cache.windows.net:6380,password=your-redis-key,ssl=True
+   your-openai-api-key
    ```
 
-4. **NEXTAUTH_SECRET**
+## Step 3: Set Up Infrastructure (One-time)
    ```bash
    # Generate with: openssl rand -hex 32
    your-32-character-secret-here

@@ -132,13 +132,13 @@ az redis list-keys \
 az redis show \
   --name redis-prompt-booster-production \
   --resource-group rg-prompt-booster \
-  --query "hostName" --output tsv
+*This will be your app URL after deployment*
 
-# Format: rediss://HOSTNAME:6380,password=PRIMARY_KEY,ssl=True
-# Example: rediss://redis-prompt-booster-production.redis.cache.windows.net:6380,password=abc123xyz,ssl=True
+### 🤖 6. OPENAI_API_KEY
 ```
-
-## Step 6: Update GitHub Secrets
+YOUR_OPENAI_API_KEY
+```
+*Your OpenAI API key for prompt analysis features*
 
 Update these secrets with the real values:
 
