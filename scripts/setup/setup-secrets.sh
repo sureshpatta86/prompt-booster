@@ -55,24 +55,24 @@ echo ""
 read -p "🤔 Do you want to create the service principal now? (y/n): " -n 1 -r
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Creating service principal..."
-    eval $SP_COMMAND
-    echo ""
-    echo "✅ Service principal created! Copy the JSON above for AZURE_CREDENTIALS"
-    echo ""
-fi
-
-# Initial placeholder values
 echo "📝 4. Initial Placeholder Secrets:"
 echo "================================"
 echo "Use these values initially, then update after infrastructure setup:"
 echo ""
 echo "DATABASE_URL:"
-echo "postgresql://temp:temp@temp:5432/temp"
+echo "\${DATABASE_URL}"
 echo ""
 echo "REDIS_URL:"
-echo "redis://temp:6379"
+echo "\${REDIS_URL}"
 echo ""
+echo "NEXTAUTH_URL:"
+echo "\${NEXTAUTH_URL}"
+echo ""
+echo "OPENAI_API_KEY:"
+echo "\${OPENAI_API_KEY}"
+echo ""
+
+# Instructions for getting real values
 echo "NEXTAUTH_URL:"
 echo "https://temp.azurecontainerapps.io"
 echo ""
