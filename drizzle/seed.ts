@@ -1,6 +1,7 @@
 import { db } from './db';
 import { users, categories } from './schema';
 import bcrypt from 'bcryptjs';
+import process from 'process';
 
 async function seed() {
   console.log('🌱 Seeding database...');
@@ -30,13 +31,18 @@ async function seed() {
       },
       {
         name: 'Creative Writing',
-        description: 'Creative and storytelling prompts',
-        color: '#ef4444',
-      },
-    ]).returning();
-
     console.log('✅ Created default categories:', defaultCategories.length);
 
+    // Create admin user
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+    if (!adminPassword) {
+      throw new Error('SEED_ADMIN_PASSWORD environment variable is required to seed the admin user');
+    }
+
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    
+    const adminUser = await db.insert(users).values({
+      name: 'Admin User',
     // Create admin user
     const hashedPassword = await bcrypt.hash('admin123', 10);
     
