@@ -1,3 +1,4 @@
+import process from 'node:process';
 /**
  * Environment Configuration
  * Type-safe environment variable handling
@@ -25,19 +26,30 @@ const envSchema = z.object({
   REDIS_URL: z.string().optional(),
   
   // OAuth (optional)
-  GITHUB_CLIENT_ID: z.string().optional(),
-  GITHUB_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
-});
-
 export type Env = z.infer<typeof envSchema>;
 
 // Validate environment variables at startup
 function validateEnv(): Env {
   try {
-    return envSchema.parse(process.env);
+    return envSchema.parse({
+      NODE_ENV: process.env.NODE_ENV,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      DATABASE_URL: process.env.DATABASE_URL,
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      REDIS_URL: process.env.REDIS_URL,
+      GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+      GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    });
   } catch (error) {
+    console.error('❌ Invalid environment variables:', error);
+    process.exit(1);
+  }
+}
+
+export const env = validateEnv();
     console.error('❌ Invalid environment variables:', error);
     process.exit(1);
   }
