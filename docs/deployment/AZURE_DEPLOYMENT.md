@@ -32,23 +32,23 @@ docker build -t $ACR_LOGIN_SERVER/$IMAGE_NAME:latest .
 
 # Login to ACR
 az acr login --name $ACR_NAME
-
-# Push image to ACR
-docker push $ACR_LOGIN_SERVER/$IMAGE_NAME:latest
-```
-
-## Step 2: Create Azure Database for PostgreSQL
-
-```bash
-# Create PostgreSQL server
 # Create PostgreSQL server
 DB_SERVER_NAME="psql-prompt-booster"
 DB_NAME="promptbooster"
 DB_USER="promptadmin"
-DB_PASSWORD="${DB_PASSWORD:?Set DB_PASSWORD to a strong password in your environment before running this command}"
+DB_PASSWORD="$(openssl rand -base64 32)"
 
 az postgres flexible-server create \
   --resource-group $RESOURCE_GROUP \
+# Create PostgreSQL server
+DB_SERVER_NAME="psql-prompt-booster"
+DB_NAME="promptbooster"
+DB_USER="promptadmin"
+DB_PASSWORD="YourSecurePassword123!"
+
+az postgres flexible-server create \
+  --resource-group $RESOURCE_GROUP \
+  --name $DB_SERVER_NAME \
   --location "$LOCATION" \
   --admin-user $DB_USER \
   --admin-password $DB_PASSWORD \
