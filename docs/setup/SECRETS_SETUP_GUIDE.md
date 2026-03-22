@@ -30,22 +30,22 @@ Go to your GitHub repository:
 3. Click **New repository secret**
 
 Add these **6 required secrets**:
+
+### 🔑 1. AZURE_CREDENTIALS
+```json
+{
+  "clientId": "12345678-1234-1234-1234-123456789012",
+  "clientSecret": "your-client-secret-here",
+  "subscriptionId": "12345678-1234-1234-1234-123456789012",
+  "tenantId": "12345678-1234-1234-1234-123456789012"
+}
+```
 *Use the JSON output from the service principal creation*
 
 ### 🗄️ 2. DATABASE_URL
 ```
-postgresql://<DB_USERNAME>:<DB_PASSWORD>@<DB_HOST>:5432/<DB_NAME>?sslmode=require
+postgresql://promptadmin:YOUR_PASSWORD@psql-prompt-booster-production.postgres.database.azure.com:5432/promptbooster?sslmode=require
 ```
-*Build this from your actual database values after infrastructure setup; do not store credentials in this document*
-
-### 🚀 3. REDIS_URL  
-```
-rediss://<REDIS_HOST>:6380,password=<REDIS_PRIMARY_KEY>,ssl=True
-```
-*Build this from your actual Redis values after infrastructure setup; do not store credentials in this document*
-
-### 🔐 4. NEXTAUTH_SECRET
-```bash
 *Replace with your actual database credentials after infrastructure setup*
 
 ### 🚀 3. REDIS_URL  
@@ -54,15 +54,15 @@ rediss://redis-prompt-booster-production.redis.cache.windows.net:6380,password=Y
 ```
 *Replace with your actual Redis credentials after infrastructure setup*
 
-### 🔐 4. NEXTAUTH_SECRET
-```bash
-
 ### 🤖 6. OPENAI_API_KEY
 ```
-<YOUR_OPENAI_API_KEY>
+YOUR_OPENAI_API_KEY
 ```
 *Your OpenAI API key for prompt analysis features*
+*Use the generated value*
 
+### 🌐 5. NEXTAUTH_URL
+```
 https://prompt-booster.azurecontainerapps.io
 ```
 *This will be your app URL after deployment*
@@ -93,13 +93,13 @@ NEXTAUTH_URL="https://temp.azurecontainerapps.io"
 
 ## Step 4: Run Infrastructure Setup
 
-  --resource-group rg-prompt-booster
+After adding the secrets:
 
-# Format: postgresql://USERNAME:PASSWORD@SERVER:5432/DATABASE?sslmode=require
-# Example: postgresql://<DB_USERNAME>:<DB_PASSWORD>@<DB_HOST>:5432/<DB_NAME>?sslmode=require
-```
-
-### Get Redis URL
+1. Go to **Actions** tab in your GitHub repository
+2. Find **"Setup Azure Infrastructure"** workflow
+3. Click **"Run workflow"**
+4. Fill in the parameters:
+   - **Environment**: `production`
    - **Resource Group**: `rg-prompt-booster`
    - **Location**: `East US`
 5. Click **"Run workflow"**
@@ -112,13 +112,13 @@ After infrastructure setup, get the actual connection strings:
 
 ### Get Database URL
 ```bash
-  --query "hostName" --output tsv
+# Get database server details
+az postgres flexible-server show \
+  --name psql-prompt-booster-production \
+  --resource-group rg-prompt-booster
 
-# Format: rediss://HOSTNAME:6380,password=PRIMARY_KEY,ssl=True
-# Example: rediss://<REDIS_HOST>:6380,password=<REDIS_PRIMARY_KEY>,ssl=True
-```
-
-## Step 6: Update GitHub Secrets
+# Format: postgresql://USERNAME:PASSWORD@SERVER:5432/DATABASE?sslmode=require
+# Example: postgresql://promptadmin:SecurePass123@psql-prompt-booster-production.postgres.database.azure.com:5432/promptbooster?sslmode=require
 ```
 
 ### Get Redis URL
@@ -191,13 +191,13 @@ Update the **NEXTAUTH_URL** secret with this URL.
 - **Rotate secrets regularly**
 - **Monitor secret usage** in GitHub Actions logs
 
-### Issue: "Database connection failed"
-```bash
-# Test connection string format
-# Should include: ?sslmode=require and use environment-provided credentials
-postgresql://user:pass@host.postgres.database.azure.com:5432/db?sslmode=require
+### ✅ Database Security
+- **SSL required** for all connections
+- **Firewall rules** restrict access to Azure services only
+- **Strong passwords** (minimum 12 characters)
+- **Regular backups** enabled
 
-# Check firewall rules
+## 🚨 Common Issues & Solutions
 
 ### Issue: "AZURE_CREDENTIALS invalid"
 ```bash
