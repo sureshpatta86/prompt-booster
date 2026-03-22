@@ -1,6 +1,12 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 
+const nextAuthSecret = process.env.NEXTAUTH_SECRET
+
+if (!nextAuthSecret) {
+  throw new Error("Missing NEXTAUTH_SECRET environment variable")
+}
+
 export const { handlers, auth } = NextAuth({
   providers: [
     Credentials({
@@ -21,13 +27,13 @@ export const { handlers, auth } = NextAuth({
       }
     })
   ],
-  pages: {
-    signIn: "/signin",
   },
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET || "development-secret-key",
+  secret: nextAuthSecret,
 })
+
+export const { GET, POST } = handlers
 
 export const { GET, POST } = handlers
